@@ -20,3 +20,12 @@ class ArticlesRepository:
     @staticmethod
     def create(**data):
         return Article.objects.create(**data)
+
+    @staticmethod
+    def deleteArticleBySlugs(slugs: list[str]):
+        deleted_count, _ = (Article.objects.filter(slug__in=slugs).delete())
+        return deleted_count
+
+    @staticmethod
+    def updateArticleBySlugs(slug: str, **data):
+        return Article.objects.filter(slug=slug).update(**data)

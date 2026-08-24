@@ -1,9 +1,6 @@
 import random
 import string
 
-from django.core.files.base import ContentFile
-
-from blog.articles.models import Article
 from blog.articles.repository import ArticlesRepository
 from core import MediaStorage
 
@@ -88,3 +85,36 @@ class ArticlesService:
             "created_at": article.created_at,
             "updated_at": article.updated_at,
         }
+
+    @staticmethod
+    def deleteArticleBySlugs(slugs: list[str], ):
+        # 去重
+        slugs = list(set(slugs))
+
+        if not slugs:
+            return 0
+
+        deleted_count = (ArticlesRepository.deleteArticleBySlugs(slugs))
+
+        return deleted_count
+
+    @staticmethod
+    def updateArticleBySlugs(
+            *,
+            slug: str,
+            title: str,
+            content: str,
+            is_draft: bool,
+            cover=None,
+    ):
+        cover_path = None
+        if cover:
+            cover_path = MediaStorage.save(cover, title=slug)
+
+        ArticlesRepository.updateArticleBySlugs(
+            slug=slug,
+            title=title,
+            content=content,
+            is_draft=is_draft,
+            cover=cover_path,
+        )

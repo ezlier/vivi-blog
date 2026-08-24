@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ArticleListResponse(BaseModel):
@@ -12,9 +12,7 @@ class ArticleListResponse(BaseModel):
 
 
 class ArticleResponse(BaseModel):
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     title: str
     slug: str
@@ -23,3 +21,7 @@ class ArticleResponse(BaseModel):
     is_draft: bool
     created_at: datetime
     updated_at: datetime
+
+
+class ArticleBatchDeleteRequest(BaseModel):
+    slugs: list[str] = Field(min_length=1, max_length=100, )

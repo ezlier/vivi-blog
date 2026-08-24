@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request, UploadFile, Form, File, HTTPException
 
-from blog.articles.schema import ArticleListResponse, ArticleResponse
+from blog.articles.schema import ArticleListResponse, ArticleResponse, ArticleBatchDeleteRequest
 from blog.articles.service import ArticlesService
 from core.dependencies import get_current_superuser
 from core.response import ApiResponse
@@ -55,7 +55,7 @@ def create_article(
         is_draft: bool = Form(True),
         cover: UploadFile | None = File(None),
 
-        # current_user=Depends(get_current_superuser)
+        current_user=Depends(get_current_superuser)
 ):
     try:
         article = ArticlesService.create_article(
@@ -72,3 +72,40 @@ def create_article(
         )
 
     return ApiResponse(data=article)
+
+
+@router.delete("/", response_model=ApiResponse)
+def deleteArticleBySlug(
+        data: ArticleBatchDeleteRequest,
+        current_user=Depends(get_current_superuser)
+):
+    deleted_count = (ArticlesService.deleteArticleBySlugs(data.slugs))
+
+    return ApiResponse(data={"deleted_count": deleted_count, })
+
+
+@router.put("/", response_model=ApiResponse)
+def updateArticleBySlug(
+        slug: str = Form(),
+        title: str = Form(...),
+        content: str = Form(...),
+        is_draft: bool = Form(True),
+        cover: UploadFile | None = File(None),
+
+        current_user=Depends(get_current_superuser)
+):
+    try:
+        ArticlesService.updateArticleBySlugs(
+            slug=slug,
+            title=title,
+            content=content,
+            is_draft=is_draft,
+            cover=cover, )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+
+    return ApiResponse()
