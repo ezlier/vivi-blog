@@ -9,3 +9,8 @@ class MessageRepository:
     @staticmethod
     def UserCreateMessage(**data):
         return Message.objects.create(**data)
+
+    @staticmethod
+    def deleteMessageBySlugs(ids: list[int]):
+        deleted_count, _ = (Message.objects.filter(id__in=ids).delete())
+        return deleted_count

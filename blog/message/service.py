@@ -7,6 +7,8 @@ class MessageService:
         MessageList = MessageRepository.getArticlesList()
         return list(
             MessageList.values(
+                "id",
+                "IP",
                 "nickname",
                 "email",
                 "content",
@@ -19,11 +21,11 @@ class MessageService:
     def userCreateMessage(
             nickname: str,
             content: str,
+            IP: str,
             email=None,
             QQ=None,
-    ):
-        IP = None
 
+    ):
         MessageRepository.UserCreateMessage(
             nickname=nickname,
             content=content,
@@ -31,3 +33,12 @@ class MessageService:
             QQ=QQ,
             IP=IP
         )
+
+    @staticmethod
+    def deleteMessageBySlugs(ids):
+        ids = list(set(ids))
+        if not ids:
+            return 0
+
+        deleted_count = MessageRepository.deleteMessageBySlugs(ids)
+        return deleted_count
