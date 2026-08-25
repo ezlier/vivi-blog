@@ -50,6 +50,6 @@ def deleteArticleByID(
         data: MessageBatchDeleteRequest,
         current_user=Depends(get_current_superuser)
 ):
-    deleted_count = (MessageService.deleteMessageBySlugs(data.ids))
+    deleted_count = (MessageService.deleteMessageByids(data.ids))
 
     return ApiResponse(data={"deleted_count": deleted_count, })

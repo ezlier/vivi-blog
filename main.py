@@ -23,9 +23,8 @@ app = FastAPI(
     version="1.0",
 )
 
-# 确保媒体目录存在，并挂载静态文件服务供封面访问
-Path(settings.MEDIA_ROOT).mkdir(parents=True, exist_ok=True)
-app.mount("/media", StaticFiles(directory=settings.MEDIA_ROOT), name="media")
+
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 app.add_middleware(ClientIPMiddleware)
 

@@ -93,7 +93,7 @@ def updateArticleBySlug(
         content: str = Form(...),
         is_draft: bool = Form(True),
         cover: UploadFile | None = File(None),
-        created_at: datetime = Form(...),
+        created_at: datetime | None = Form(None),
 
         # current_user=Depends(get_current_superuser)
 ):

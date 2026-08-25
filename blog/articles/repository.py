@@ -18,6 +18,10 @@ class ArticlesRepository:
         )
 
     @staticmethod
+    def getCoverBySlug(slug: str):
+        return Article.objects.filter(slug=slug).values_list("cover", flat=True).first()
+
+    @staticmethod
     def create(**data):
         return Article.objects.create(**data)
 
@@ -25,6 +29,14 @@ class ArticlesRepository:
     def deleteArticleBySlugs(slugs: list[str]):
         deleted_count, _ = (Article.objects.filter(slug__in=slugs).delete())
         return deleted_count
+
+    @staticmethod
+    def getCoversBySlugs(slugs: list[str]):
+        return list(
+            Article.objects
+            .filter(slug__in=slugs)
+            .values_list("cover", flat=True)
+        )
 
     @staticmethod
     def updateArticleBySlugs(slug: str, **data):

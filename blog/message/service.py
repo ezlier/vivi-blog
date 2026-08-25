@@ -35,10 +35,10 @@ class MessageService:
         )
 
     @staticmethod
-    def deleteMessageBySlugs(ids):
+    def deleteMessageByids(ids):
         ids = list(set(ids))
         if not ids:
             return 0
 
-        deleted_count = MessageRepository.deleteMessageBySlugs(ids)
+        deleted_count = MessageRepository.deleteMessageByIds(ids)
         return deleted_count

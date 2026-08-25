@@ -96,7 +96,14 @@ class ArticlesService:
         if not slugs:
             return 0
 
-        deleted_count = (ArticlesRepository.deleteArticleBySlugs(slugs))
+        # 删除前取出封面路径，用于同步删除文件
+        covers = ArticlesRepository.getCoversBySlugs(slugs)
+
+        deleted_count = ArticlesRepository.deleteArticleBySlugs(slugs)
+
+        for cover in covers:
+            if cover:
+                MediaStorage.delete(cover)
 
         return deleted_count
 
@@ -110,29 +117,28 @@ class ArticlesService:
             cover=None,
             created_at=None,
     ):
-        cover_path = None
+        # 只更新传入的非空字段
+        update_fields = {}
+
+        if title:
+            update_fields["title"] = title
+        if content:
+            update_fields["content"] = content
+        if is_draft is not None:
+            update_fields["is_draft"] = is_draft
+        if created_at:
+            update_fields["created_at"] = created_at
+
+        # 上传了新封面才更新，并覆盖原图片
         if cover:
-            cover_path = MediaStorage.save(cover, title=slug)
-
-        updated_at = now()
-
-        if not created_at:
-            ArticlesRepository.updateArticleBySlugs(
-                slug=slug,
-                title=title,
-                content=content,
-                is_draft=is_draft,
-                cover=cover_path,
-                updated_at=updated_at,
+            old_cover = ArticlesRepository.getCoverBySlug(slug)
+            update_fields["cover"] = MediaStorage.updateCover(
+                cover, title=slug, old_path=old_cover
             )
+
+        if not update_fields:
             return
 
-        ArticlesRepository.updateArticleBySlugs(
-            slug=slug,
-            title=title,
-            content=content,
-            is_draft=is_draft,
-            cover=cover_path,
-            updated_at=updated_at,
-            created_at=created_at,
-        )
+        update_fields["updated_at"] = now()
+
+        ArticlesRepository.updateArticleBySlugs(slug=slug, **update_fields)
