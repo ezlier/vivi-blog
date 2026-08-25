@@ -82,8 +82,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',  # 数据库类型
+        'NAME': 'blog',                      # 数据库名
+        'USER': 'root',                        # 用户名
+        'PASSWORD': '123456',                     # 密码
+        'HOST': '127.0.0.1',                   # 主机
+        'PORT': '3306',                        # 端口
+        'OPTIONS': {
+            'charset': 'utf8mb4',              # 支持表情和多语言
+        },
     }
 }
 
@@ -111,8 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
@@ -140,16 +146,3 @@ MAILERS = {
 }
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',  # 数据库类型
-        'NAME': 'blog',                      # 数据库名
-        'USER': 'root',                        # 用户名
-        'PASSWORD': '123456',                     # 密码
-        'HOST': '127.0.0.1',                   # 主机
-        'PORT': '3306',                        # 端口
-        'OPTIONS': {
-            'charset': 'utf8mb4',              # 支持表情和多语言
-        },
-    }
-}

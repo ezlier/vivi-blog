@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Request, UploadFile, Form, File, HTTPException
 
 from blog.articles.schema import ArticleListResponse, ArticleResponse, ArticleBatchDeleteRequest
@@ -9,11 +11,6 @@ router = APIRouter(
     prefix="/articles",
     tags=["文章"]
 )
-
-
-@router.get("/test")
-def admintest(current_user=Depends(get_current_superuser)):
-    return {"message": "admin"}
 
 
 @router.get("/{slug}", response_model=ApiResponse[ArticleResponse])
@@ -46,6 +43,11 @@ def getArticlesList():
 # ============================
 # ==========管理员接口==========
 # ============================
+
+
+@router.get("/test")
+def admintest(current_user=Depends(get_current_superuser)):
+    return {"message": "admin"}
 
 
 @router.post("/", response_model=ApiResponse[ArticleResponse])
@@ -91,8 +93,9 @@ def updateArticleBySlug(
         content: str = Form(...),
         is_draft: bool = Form(True),
         cover: UploadFile | None = File(None),
+        created_at: datetime = Form(...),
 
-        current_user=Depends(get_current_superuser)
+        # current_user=Depends(get_current_superuser)
 ):
     try:
         ArticlesService.updateArticleBySlugs(
@@ -100,7 +103,9 @@ def updateArticleBySlug(
             title=title,
             content=content,
             is_draft=is_draft,
-            cover=cover, )
+            cover=cover,
+            created_at=created_at
+        )
 
     except ValueError as e:
         raise HTTPException(

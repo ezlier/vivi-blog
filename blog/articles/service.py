@@ -1,6 +1,8 @@
 import random
 import string
 
+from django.utils.timezone import now
+
 from blog.articles.repository import ArticlesRepository
 from core import MediaStorage
 
@@ -106,10 +108,24 @@ class ArticlesService:
             content: str,
             is_draft: bool,
             cover=None,
+            created_at=None,
     ):
         cover_path = None
         if cover:
             cover_path = MediaStorage.save(cover, title=slug)
+
+        updated_at = now()
+
+        if not created_at:
+            ArticlesRepository.updateArticleBySlugs(
+                slug=slug,
+                title=title,
+                content=content,
+                is_draft=is_draft,
+                cover=cover_path,
+                updated_at=updated_at,
+            )
+            return
 
         ArticlesRepository.updateArticleBySlugs(
             slug=slug,
@@ -117,4 +133,6 @@ class ArticlesService:
             content=content,
             is_draft=is_draft,
             cover=cover_path,
+            updated_at=updated_at,
+            created_at=created_at,
         )

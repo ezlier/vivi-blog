@@ -8,3 +8,6 @@
 /.idea/misc.xml
 /.idea/modules.xml
 /.idea/vcs.xml
+/blog/comment/migrations/0001_initial.py
+/blog/message/migrations/0001_initial.py
+/.idea/db-forest-config.xml
