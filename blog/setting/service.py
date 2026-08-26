@@ -1,4 +1,4 @@
-from blog.setting.Repository import SettingRepository
+from blog.setting.repository import SettingRepository
 from core import MediaStorage
 
 

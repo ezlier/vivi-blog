@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 from middleware.addClientIP import ClientIPMiddleware
 
@@ -12,7 +11,6 @@ import django
 
 django.setup()
 
-from django.conf import settings
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
