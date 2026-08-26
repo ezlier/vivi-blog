@@ -26,7 +26,12 @@ class ArticlesService:
 
     @staticmethod
     def getArticleBySlug(slug: str):
-        return ArticlesRepository.getArticleBySlug(slug)
+        article = ArticlesRepository.getArticleBySlug(slug)
+        if article is None:
+            raise ValueError("文章不存在")
+
+        return article
+
         # article = ArticlesRepository.getArticleBySlug(slug)
         # if article is None:
         #     return None

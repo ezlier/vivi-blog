@@ -1,6 +1,8 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
+from blog.comment.schema import CommentListResponse
+
 
 class ArticleListResponse(BaseModel):
     title: str

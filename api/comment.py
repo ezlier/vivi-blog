@@ -1,7 +1,14 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Query, Depends
 
-from blog.comment.schema import CommentListResponse, CommentCreateRequest
-from blog.comment.service import UserCommentService
+from blog.comment.schema import (
+    CommentListResponse,
+    CommentCreateRequest,
+    CommentResponse,
+    CommentsBatchDeleteRequest,
+    AdminCommentListResponse,
+)
+from blog.comment.service import UserCommentService, AdminCommentService
+from core.dependencies import get_current_superuser
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -10,12 +17,40 @@ router = APIRouter(
 )
 
 
-@router.get("/{slug}/", response_model=ApiResponse[list[CommentListResponse]])
-def getCommentBySlug(slug: str):
-    return ApiResponse(data=UserCommentService.getCommentBySlug(slug))
+@router.get("/admin", response_model=ApiResponse[AdminCommentListResponse])
+def getAllComments(
+        page: int = Query(default=1, ge=1, ),
+        page_size: int = Query(default=10, ge=1, le=100, ),
+        current_user=Depends(get_current_superuser)
+):
+    return ApiResponse(data=AdminCommentService.getAllComment(page=page, page_size=page_size))
 
 
-@router.post("/{slug}/", response_model=ApiResponse[CommentListResponse], )
+@router.delete("/", response_model=ApiResponse)
+def deleteComments(
+        data: CommentsBatchDeleteRequest,
+        # current_user=Depends(get_current_superuser)？
+):
+    deleted_count = AdminCommentService.deleteCommentsByIds(data.ids)
+
+    return ApiResponse(data={"deleted_count": deleted_count, })
+
+
+# ===============================
+# ===========↓用户接口↓===========
+# ===============================
+
+
+@router.get("/{slug}/", response_model=ApiResponse[CommentListResponse])
+def getCommentBySlug(
+        slug: str,
+        page: int = Query(default=1, ge=1, ),
+        page_size: int = Query(default=10, ge=1, le=100, )
+):
+    return ApiResponse(data=UserCommentService.getCommentBySlug(slug=slug, page=page, page_size=page_size))
+
+
+@router.post("/{slug}/", response_model=ApiResponse[CommentResponse], )
 def create_comment(
         request: Request,
         slug: str,
@@ -36,5 +71,3 @@ def create_comment(
             status_code=400,
             detail=str(e),
         )
-
-

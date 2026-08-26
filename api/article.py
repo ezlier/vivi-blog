@@ -16,11 +16,15 @@ router = APIRouter(
 @router.get("/{slug}", response_model=ApiResponse[ArticleResponse])
 def getArticleBySlug(slug: str, request: Request):
     articleBase = ArticlesService.getArticleBySlug(slug)
+    if articleBase is None:
+        raise HTTPException(
+            status_code=404,
+            detail="文章不存在",
+        )
 
     cover_url = None
-
     if articleBase.cover:
-        cover_url = request.base_url._url.rstrip("/") + articleBase.cover.url
+        cover_url = str(request.base_url).rstrip("/") + articleBase.cover
 
     article = {
         "title": articleBase.title,
@@ -95,7 +99,7 @@ def updateArticleBySlug(
         cover: UploadFile | None = File(None),
         created_at: datetime | None = Form(None),
 
-        # current_user=Depends(get_current_superuser)
+        current_user=Depends(get_current_superuser)
 ):
     try:
         ArticlesService.updateArticleBySlugs(
