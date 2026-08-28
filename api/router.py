@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from .essay import router as essay_router
 from .comment import router as comment_router
 from .article import router as article_router
 from .setting import router as setting_router
@@ -13,3 +14,4 @@ router.include_router(setting_router)
 router.include_router(user_router)
 router.include_router(message_router)
 router.include_router(comment_router)
+router.include_router(essay_router)

@@ -77,3 +77,7 @@ def _sanitize_filename(name: str) -> str:
     for ch in '<>:"/\\|?*':
         name = name.replace(ch, "")
     return name.strip()
+
+
+def saveImgs(imgs, slug):
+    return None

@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Form, UploadFile, File
+from fastapi import APIRouter, Form, UploadFile, File, Depends
 
 from blog.setting.schema import SettingResponse
 from blog.setting.service import SettingService, AdminSettingService
+from core.dependencies import get_current_superuser
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -33,6 +34,8 @@ def updateSetting(
     footer_text1: str = Form(),
     footer_text2: str = Form(),
     create_time: datetime | None = Form(None),
+
+    current_user=Depends(get_current_superuser)
 ):
     AdminSettingService.update(
         name=name,

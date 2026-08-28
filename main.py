@@ -1,5 +1,6 @@
 import os
 
+from core.openapi import setup_openapi
 from middleware.addClientIP import ClientIPMiddleware
 
 os.environ.setdefault(
@@ -21,7 +22,6 @@ app = FastAPI(
     version="1.0",
 )
 
-
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
 app.add_middleware(ClientIPMiddleware)
@@ -31,5 +31,7 @@ app.add_middleware(ClientIPMiddleware)
 def hello():
     return {"message": "FastAPI + Django"}
 
+
+setup_openapi(app)
 
 app.include_router(router)

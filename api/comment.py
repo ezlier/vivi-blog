@@ -29,7 +29,7 @@ def getAllComments(
 @router.delete("/", response_model=ApiResponse)
 def deleteComments(
         data: CommentsBatchDeleteRequest,
-        # current_user=Depends(get_current_superuser)？
+        current_user=Depends(get_current_superuser)
 ):
     deleted_count = AdminCommentService.deleteCommentsByIds(data.ids)
 

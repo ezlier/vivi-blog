@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class CategoryConfig(AppConfig):
-    name = 'blog.category'
+    name = 'blog.essay'
