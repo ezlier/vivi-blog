@@ -1,5 +1,7 @@
 import os
 
+import uvicorn
+
 from core.openapi import setup_openapi
 from middleware.addClientIP import ClientIPMiddleware
 
@@ -35,3 +37,6 @@ def hello():
 setup_openapi(app)
 
 app.include_router(router)
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="localhost", port=8000, reload=True)

@@ -1,4 +1,7 @@
 import os
+import random
+import shutil
+import string
 from datetime import datetime
 from pathlib import Path
 
@@ -55,7 +58,11 @@ def delete(relative_path: str) -> None:
 
     media_root = Path(settings.MEDIA_ROOT)
     target = media_root / relative_path
-    target.unlink(missing_ok=True)
+
+    if target.is_dir():
+        shutil.rmtree(target)
+    else:
+        target.unlink(missing_ok=True)
 
     # 清理空目录
     parent = target.parent
@@ -79,5 +86,49 @@ def _sanitize_filename(name: str) -> str:
     return name.strip()
 
 
-def saveImgs(imgs, slug):
-    return None
+def saveImgs(imgs: list, slug: str):
+    safe_title = _sanitize_filename(slug) or "imgs"
+    now = datetime.now()
+    i = 1
+    for img in imgs:
+        ext = os.path.splitext(img.filename)[1].lower() or ".jpg"
+        imgName = str(i) + ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        relative_path = f"imgs/{now:%Y}/{now:%m}/{safe_title}/{imgName}{ext}"
+
+        target = Path(settings.MEDIA_ROOT) / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        target.write_bytes(img.file.read())
+        i += 1
+
+    return f"imgs/{now:%Y}/{now:%m}/{safe_title}"
+
+
+def getImgs(imgs_Path: str):
+    print(imgs_Path)
+    image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.tif', '.tiff'}
+    result = []
+
+    target = Path(settings.MEDIA_ROOT) / imgs_Path
+
+    if not os.path.isdir(target):
+        return result
+
+    # 规范化传入路径：统一为正斜杠，去除尾部斜杠
+    base_path = imgs_Path.replace('\\', '/').rstrip('/')
+
+    try:
+        for entry in os.listdir(target):
+            full_path = os.path.join(target, entry)
+            if os.path.isfile(full_path):
+                ext = os.path.splitext(entry)[1].lower()
+                if ext in image_exts:
+                    # 使用相对路径构建返回值
+                    path = f"{base_path}/{entry}"
+                    result.append(path)
+                    print(path)
+    except PermissionError:
+        pass
+
+    result.sort()
+    return result

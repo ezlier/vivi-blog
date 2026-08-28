@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Form, UploadFile, File
+from fastapi import APIRouter, Query, Form, UploadFile, File, Depends
 
-from blog.essay.schema import EssayListResponse, EssayResponse
-from blog.essay.service import UserEssayService
+from blog.essay.schema import EssayListResponse, EssayResponse, EssayBatchDeleteRequest
+from blog.essay.service import UserEssayService, AdminEssayService
+from core.dependencies import get_current_superuser
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -36,5 +37,22 @@ def createEssay(
         content: str = Form(...),
         is_draft: bool = Form(True),
         imgs: Annotated[list[UploadFile] | None, File()] = None,
+
+        current_user=Depends(get_current_superuser)
 ):
-    pass
+    AdminEssayService.createEssay(
+        title=title,
+        content=content,
+        is_draft=is_draft,
+        imgs=imgs,
+    )
+    return ApiResponse()
+
+
+@router.delete("/slug", response_model=ApiResponse)
+def deleteEssay(
+        data: EssayBatchDeleteRequest,
+        current_user=Depends(get_current_superuser),
+):
+    deleted_count = AdminEssayService.deleteEssay(data.slugs)
+    return ApiResponse(data=deleted_count)
