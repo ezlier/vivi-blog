@@ -4,6 +4,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from blog.comment.schema import CommentListResponse
 
 
+class ArticleTagResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
 class ArticleListResponse(BaseModel):
     title: str
     slug: str
@@ -11,6 +18,7 @@ class ArticleListResponse(BaseModel):
     is_draft: bool
     created_at: datetime
     updated_at: datetime
+    tags: list[ArticleTagResponse]
 
 
 class ArticleResponse(BaseModel):
@@ -23,6 +31,7 @@ class ArticleResponse(BaseModel):
     is_draft: bool
     created_at: datetime
     updated_at: datetime
+    tags: list[ArticleTagResponse]
 
 
 class ArticleBatchDeleteRequest(BaseModel):

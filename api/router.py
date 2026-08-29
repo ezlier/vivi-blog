@@ -7,6 +7,7 @@ from .setting import router as setting_router
 from .message import router as message_router
 from .user import router as user_router
 from .visitor import router as visitor_router
+from .tag import router as tag_router
 
 router = APIRouter(prefix="/api/v1")
 
@@ -17,3 +18,4 @@ router.include_router(message_router)
 router.include_router(comment_router)
 router.include_router(essay_router)
 router.include_router(visitor_router)
+router.include_router(tag_router)

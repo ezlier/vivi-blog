@@ -13,30 +13,40 @@ router = APIRouter(
 )
 
 
+def _serialize_article(article, request: Request):
+    cover_url = None
+    if article.cover:
+        cover_url = request.build_absolute_uri(article.cover.url)
+
+    return {
+        "title": article.title,
+        "slug": article.slug,
+        "cover": cover_url,
+        "content": article.content,
+        "is_draft": article.is_draft,
+        "created_at": article.created_at,
+        "updated_at": article.updated_at,
+        "tags": [
+            {
+                "id": tag.id,
+                "name": tag.name,
+            }
+            for tag in article.tags.all()
+        ],
+    }
+
+
 @router.get("/{slug}", response_model=ApiResponse[ArticleResponse])
 def getArticleBySlug(slug: str, request: Request):
-    articleBase = ArticlesService.getArticleBySlug(slug)
-    if articleBase is None:
+    try:
+        article = ArticlesService.getArticleBySlug(slug)
+    except ValueError:
         raise HTTPException(
             status_code=404,
             detail="文章不存在",
         )
 
-    cover_url = None
-    if articleBase.cover:
-        cover_url = str(request.base_url).rstrip("/") + articleBase.cover
-
-    article = {
-        "title": articleBase.title,
-        "slug": articleBase.slug,
-        "cover": cover_url,
-        "content": articleBase.content,
-        "is_draft": articleBase.is_draft,
-        "created_at": articleBase.created_at,
-        "updated_at": articleBase.updated_at,
-    }
-
-    return ApiResponse(data=article)
+    return ApiResponse(data=_serialize_article(article, request))
 
 
 @router.get("/", response_model=ApiResponse[list[ArticleListResponse]])
@@ -56,12 +66,14 @@ def admintest(current_user=Depends(get_current_superuser)):
 
 @router.post("/", response_model=ApiResponse[ArticleResponse])
 def create_article(
+        request: Request,
         title: str = Form(...),
         content: str = Form(...),
         is_draft: bool = Form(True),
         cover: UploadFile | None = File(None),
+        tag_names: list[str] | None = Form(None),
 
-        current_user=Depends(get_current_superuser)
+        # current_user=Depends(get_current_superuser)
 ):
     try:
         article = ArticlesService.create_article(
@@ -69,6 +81,7 @@ def create_article(
             content=content,
             is_draft=is_draft,
             cover_file=cover,
+            tag_names=tag_names,
         )
 
     except ValueError as e:
@@ -77,7 +90,7 @@ def create_article(
             detail=str(e),
         )
 
-    return ApiResponse(data=article)
+    return ApiResponse(data=_serialize_article(article, request))
 
 
 @router.delete("/", response_model=ApiResponse)
@@ -90,25 +103,28 @@ def deleteArticleBySlug(
     return ApiResponse(data={"deleted_count": deleted_count, })
 
 
-@router.put("/", response_model=ApiResponse)
+@router.put("/", response_model=ApiResponse[ArticleResponse])
 def updateArticleBySlug(
+        request: Request,
         slug: str = Form(),
         title: str = Form(...),
         content: str = Form(...),
         is_draft: bool = Form(True),
         cover: UploadFile | None = File(None),
         created_at: datetime | None = Form(None),
+        tag_names: list[str] | None = Form(None),
 
         current_user=Depends(get_current_superuser)
 ):
     try:
-        ArticlesService.updateArticleBySlugs(
+        article = ArticlesService.updateArticleBySlugs(
             slug=slug,
             title=title,
             content=content,
             is_draft=is_draft,
             cover=cover,
-            created_at=created_at
+            created_at=created_at,
+            tag_names=tag_names,
         )
 
     except ValueError as e:
@@ -117,4 +133,4 @@ def updateArticleBySlug(
             detail=str(e),
         )
 
-    return ApiResponse()
+    return ApiResponse(data=_serialize_article(article, request))

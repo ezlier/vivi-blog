@@ -1,28 +1,43 @@
 import random
 import string
 
+from django.db import transaction
 from django.utils.timezone import now
 
 from blog.articles.repository import ArticlesRepository
+from blog.tag.service import TagService
 from core import MediaStorage
 
 
 class ArticlesService:
 
     @staticmethod
+    def _to_article_data(article):
+        return {
+            "title": article.title,
+            "slug": article.slug,
+            "cover": str(article.cover) if article.cover else None,
+            "content": article.content,
+            "is_draft": article.is_draft,
+            "created_at": article.created_at,
+            "updated_at": article.updated_at,
+            "tags": [
+                {
+                    "id": tag.id,
+                    "name": tag.name,
+                }
+                for tag in article.tags.all()
+            ],
+        }
+
+    @staticmethod
     def getArticlesList():
         articles = ArticlesRepository.getArticlesList()
 
-        return list(
-            articles.values(
-                "title",
-                "slug",
-                "cover",
-                "is_draft",
-                "created_at",
-                "updated_at",
-            )
-        )
+        return [
+            ArticlesService._to_article_data(article)
+            for article in articles
+        ]
 
     @staticmethod
     def getArticleBySlug(slug: str):
@@ -64,34 +79,31 @@ class ArticlesService:
             content: str,
             is_draft: bool,
             cover_file=None,
+            tag_names: list[str] | None = None,
     ):
-        # 1. 生成随机字符串
-        slug = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        with transaction.atomic():
+            # 1. 生成随机字符串
+            slug = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
-        # 2. 保存封面文件
-        cover_path = None
+            # 2. 保存封面文件
+            cover_path = None
 
-        if cover_file:
-            cover_path = MediaStorage.save(cover_file, title=slug)
+            if cover_file:
+                cover_path = MediaStorage.save(cover_file, title=slug)
 
-        # 3. 保存数据库
-        article = ArticlesRepository.create(
-            title=title,
-            slug=slug,
-            content=content,
-            is_draft=is_draft,
-            cover=cover_path,
-        )
+            # 3. 保存数据库
+            article = ArticlesRepository.create(
+                title=title,
+                slug=slug,
+                content=content,
+                is_draft=is_draft,
+                cover=cover_path,
+            )
 
-        return {
-            "title": article.title,
-            "slug": article.slug,
-            "cover": cover_path,
-            "content": article.content,
-            "is_draft": article.is_draft,
-            "created_at": article.created_at,
-            "updated_at": article.updated_at,
-        }
+            if tag_names is not None:
+                article.tags.set(TagService.resolve_names(tag_names))
+
+        return article
 
     @staticmethod
     def deleteArticleBySlugs(slugs: list[str], ):
@@ -121,29 +133,41 @@ class ArticlesService:
             is_draft: bool,
             cover=None,
             created_at=None,
+            tag_names: list[str] | None = None,
     ):
-        # 只更新传入的非空字段
-        update_fields = {}
+        with transaction.atomic():
+            article = ArticlesRepository.getArticleBySlugForUpdate(slug)
+            if article is None:
+                raise ValueError("文章不存在")
 
-        if title:
-            update_fields["title"] = title
-        if content:
-            update_fields["content"] = content
-        if is_draft is not None:
-            update_fields["is_draft"] = is_draft
-        if created_at:
-            update_fields["created_at"] = created_at
+            # 只更新传入的非空字段
+            update_fields = {}
 
-        # 上传了新封面才更新，并覆盖原图片
-        if cover:
-            old_cover = ArticlesRepository.getCoverBySlug(slug)
-            update_fields["cover"] = MediaStorage.updateCover(
-                cover, title=slug, old_path=old_cover
-            )
+            if title:
+                update_fields["title"] = title
+            if content:
+                update_fields["content"] = content
+            if is_draft is not None:
+                update_fields["is_draft"] = is_draft
+            if created_at:
+                update_fields["created_at"] = created_at
 
-        if not update_fields:
-            return
+            # 上传了新封面才更新，并覆盖原图片
+            if cover:
+                old_cover = article.cover.name if article.cover else None
+                update_fields["cover"] = MediaStorage.updateCover(
+                    cover, title=slug, old_path=old_cover
+                )
 
-        update_fields["updated_at"] = now()
+            if update_fields:
+                update_fields["updated_at"] = now()
 
-        ArticlesRepository.updateArticleBySlugs(slug=slug, **update_fields)
+                for field, value in update_fields.items():
+                    setattr(article, field, value)
+
+                article.save(update_fields=list(update_fields.keys()))
+
+            if tag_names is not None:
+                article.tags.set(TagService.resolve_names(tag_names))
+
+        return article

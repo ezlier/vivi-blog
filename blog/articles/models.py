@@ -4,6 +4,7 @@ from django.db import models
 class Article(models.Model):
     title = models.CharField(max_length=200, verbose_name="标题")
     slug = models.SlugField(max_length=250, unique=True, verbose_name="Slug")
+    tags = models.ManyToManyField("tag.Tag", blank=True, null=True, related_name="articles", verbose_name="标签", )
     cover = models.ImageField(upload_to="articles/covers/%Y/%m/", blank=True, null=True, verbose_name="封面")
     content = models.TextField(verbose_name="正文")
     is_draft = models.BooleanField(default=True, verbose_name="是否草稿")

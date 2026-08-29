@@ -4,16 +4,32 @@ from blog.articles.models import Article
 class ArticlesRepository:
     @staticmethod
     def getArticlesList():
-        return Article.objects.filter(is_draft=False).order_by("-created_at")
+        return (
+            Article.objects
+            .filter(is_draft=False)
+            .prefetch_related("tags")
+            .order_by("-created_at")
+        )
 
     @staticmethod
     def getArticleBySlug(slug: str):
         return (
             Article.objects
+            .prefetch_related("tags")
             .filter(
                 slug=slug,
                 is_draft=False,
             )
+            .first()
+        )
+
+    @staticmethod
+    def getArticleBySlugForUpdate(slug: str):
+        return (
+            Article.objects
+            .select_for_update()
+            .prefetch_related("tags")
+            .filter(slug=slug)
             .first()
         )
 
