@@ -1,9 +1,7 @@
 import os
-
 import uvicorn
-
 from core.openapi import setup_openapi
-from middleware.addClientIP import ClientIPMiddleware
+
 
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
@@ -18,6 +16,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from api.router import router
+from middleware.addClientIP import ClientIPMiddleware
+from middleware.blackList import visitor_blacklist_middleware
 
 app = FastAPI(
     title="BlogAPI",
@@ -27,6 +27,7 @@ app = FastAPI(
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
 app.add_middleware(ClientIPMiddleware)
+app.middleware("http")(visitor_blacklist_middleware)
 
 
 @app.get("/")
