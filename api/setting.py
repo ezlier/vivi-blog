@@ -1,10 +1,11 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Form, UploadFile, File, Depends
+from fastapi import APIRouter, Form, UploadFile, File, Depends, HTTPException
 
 from blog.setting.schema import SettingResponse
 from blog.setting.service import SettingService, AdminSettingService
 from core.dependencies import get_current_superuser
+from core.rate_limit import rate_limit
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -12,7 +13,11 @@ router = APIRouter(
     tags=["设定"]
 )
 
-@router.get("/", response_model=ApiResponse[SettingResponse])
+@router.get(
+    "/",
+    response_model=ApiResponse[SettingResponse],
+    dependencies=[Depends(rate_limit(60))],
+)
 def getSetting():
     return ApiResponse(
         data=SettingService.get()
@@ -37,13 +42,20 @@ def updateSetting(
 
     current_user=Depends(get_current_superuser)
 ):
-    AdminSettingService.update(
-        name=name,
-        web_name=web_name,
-        name_avatar=name_avatar,
-        about_md=about_md,
-        footer_text1=footer_text1,
-        footer_text2=footer_text2,
-        create_time=create_time
-    )
+    try:
+        AdminSettingService.update(
+            name=name,
+            web_name=web_name,
+            name_avatar=name_avatar,
+            about_md=about_md,
+            footer_text1=footer_text1,
+            footer_text2=footer_text2,
+            create_time=create_time
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+
     return ApiResponse()

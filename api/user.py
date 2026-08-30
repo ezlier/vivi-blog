@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
+from core.rate_limit import rate_limit
 from core.response import ApiResponse
 from core.security import (
     create_access_token,
@@ -17,7 +18,11 @@ router = APIRouter(
 )
 
 
-@router.post("/login", response_model=ApiResponse)
+@router.post(
+    "/login",
+    response_model=ApiResponse,
+    dependencies=[Depends(rate_limit(5, key_prefix="auth"))],
+)
 def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], ):
     """
     用户登录
@@ -50,10 +55,11 @@ def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], ):
     })
 
 
-@router.post("/refresh")
-def refresh(
-        refresh_token: str,
-):
+@router.post(
+    "/refresh",
+    dependencies=[Depends(rate_limit(20, key_prefix="auth"))],
+)
+def refresh(refresh_token: str, ):
     """
     使用 Refresh Token 获取新的 Access Token
     """
@@ -75,9 +81,7 @@ def refresh(
             detail="无效或已过期的 Refresh Token",
         )
 
-    access_token = create_access_token(
-        int(user_id)
-    )
+    access_token = create_access_token(int(user_id))
 
     return {
         "access_token": access_token,

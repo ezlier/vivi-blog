@@ -3,12 +3,13 @@ from blog.articles.models import Article
 
 class ArticlesRepository:
     @staticmethod
-    def getArticlesList():
+    def getArticlesList(offset: int, limit: int):
         return (
             Article.objects
             .filter(is_draft=False)
             .prefetch_related("tags")
             .order_by("-created_at")
+            [offset:offset + limit]
         )
 
     @staticmethod
@@ -57,3 +58,7 @@ class ArticlesRepository:
     @staticmethod
     def updateArticleBySlugs(slug: str, **data):
         return Article.objects.filter(slug=slug).update(**data)
+
+    @staticmethod
+    def count_all():
+        return Article.objects.count()

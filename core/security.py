@@ -5,16 +5,28 @@ import jwt
 from jwt import InvalidTokenError
 
 
-# 生产环境必须放到环境变量中
 SECRET_KEY = os.getenv(
-    "JWT_SECRET_KEY",
-    "change-this-secret-key-in-production",
+    "JWT_SECRET_KEY"
 )
 
-ALGORITHM = "HS256"
+ALGORITHM = os.getenv(
+    "JWT_ALGORITHM",
+    "HS256",
+)
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv(
+        "ACCESS_TOKEN_EXPIRE_MINUTES",
+        "30",
+    )
+)
+
+REFRESH_TOKEN_EXPIRE_DAYS = int(
+    os.getenv(
+        "REFRESH_TOKEN_EXPIRE_DAYS",
+        "7",
+    )
+)
 
 
 def create_access_token(user_id: int) -> str:

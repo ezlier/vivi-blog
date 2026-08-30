@@ -1,21 +1,28 @@
+import math
+
 from blog.message.repository import MessageRepository
 
 
 class MessageService:
     @staticmethod
-    def getMessageList():
-        MessageList = MessageRepository.getArticlesList()
-        return list(
-            MessageList.values(
-                "id",
-                "IP",
-                "nickname",
-                "email",
-                "content",
-                "QQ",
-                "created_at"
-            )
+    def getMessageList(page: int = 1, page_size: int = 10):
+        offset = (page - 1) * page_size
+        MessageList = MessageRepository.getArticlesList(
+            offset=offset,
+            limit=page_size,
         )
+        total = MessageRepository.count_all()
+
+        total_pages = math.ceil(total / page_size) if total > 0 else 0
+        return {
+            "messages": {
+                "items": list(MessageList),
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": total_pages,
+            }
+        }
 
     @staticmethod
     def userCreateMessage(

@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Form, UploadFile, File, Depends, Request
+from fastapi import APIRouter, Query, Form, UploadFile, File, Depends, Request, HTTPException
 
 from blog.essay.schema import EssayListResponse, EssayResponse, EssayBatchDeleteRequest
 from blog.essay.service import UserEssayService, AdminEssayService
 from core.dependencies import get_current_superuser
+from core.rate_limit import rate_limit
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -13,7 +14,11 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=ApiResponse[EssayListResponse])
+@router.get(
+    "/",
+    response_model=ApiResponse[EssayListResponse],
+    dependencies=[Depends(rate_limit(60))],
+)
 def getEssayList(
         request: Request,
         page: int = Query(default=1, ge=1, ),
@@ -46,12 +51,19 @@ def createEssay(
 
         current_user=Depends(get_current_superuser)
 ):
-    AdminEssayService.createEssay(
-        title=title,
-        content=content,
-        is_draft=is_draft,
-        imgs=imgs,
-    )
+    try:
+        AdminEssayService.createEssay(
+            title=title,
+            content=content,
+            is_draft=is_draft,
+            imgs=imgs,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+
     return ApiResponse()
 
 

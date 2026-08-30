@@ -1,10 +1,11 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Request, UploadFile, Form, File, HTTPException
+from fastapi import APIRouter, Depends, Request, UploadFile, Form, File, HTTPException, Query
 
-from blog.articles.schema import ArticleListResponse, ArticleResponse, ArticleBatchDeleteRequest
+from blog.articles.schema import ArticleResponse, ArticleBatchDeleteRequest
 from blog.articles.service import ArticlesService
 from core.dependencies import get_current_superuser
+from core.rate_limit import rate_limit
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -36,7 +37,11 @@ def _serialize_article(article, request: Request):
     }
 
 
-@router.get("/{slug}", response_model=ApiResponse[ArticleResponse])
+@router.get(
+    "/{slug}",
+    response_model=ApiResponse[ArticleResponse],
+    dependencies=[Depends(rate_limit(120))],
+)
 def getArticleBySlug(slug: str, request: Request):
     try:
         article = ArticlesService.getArticleBySlug(slug)
@@ -49,13 +54,22 @@ def getArticleBySlug(slug: str, request: Request):
     return ApiResponse(data=_serialize_article(article, request))
 
 
-@router.get("/", response_model=ApiResponse[list[ArticleListResponse]])
-def getArticlesList(request: Request):
-    ArticlesBase = ArticlesService.getArticlesList()
+@router.get(
+    "/",
+    response_model=ApiResponse,
+    dependencies=[Depends(rate_limit(60))],
+)
+def getArticlesList(
+        request: Request,
+        page: int = Query(default=1, ge=1, ),
+        page_size: int = Query(default=10, ge=1, le=100, ),
+):
+    ArticlesBase = ArticlesService.getArticlesList(page=page, page_size=page_size)
     ArticleList = []
-    for article in ArticlesBase:
+    for article in ArticlesBase["articles"]["items"]:
         ArticleList.append(_serialize_article(article, request))
-    return ApiResponse(data=ArticleList)
+    ArticlesBase["articles"]["items"] = ArticleList
+    return ApiResponse(data=ArticlesBase)
 
 
 # ============================
@@ -70,7 +84,6 @@ def admintest(current_user=Depends(get_current_superuser)):
 
 @router.post("/", response_model=ApiResponse[ArticleResponse])
 def create_article(
-        request: Request,
         title: str = Form(...),
         content: str = Form(...),
         is_draft: bool = Form(True),
@@ -80,7 +93,7 @@ def create_article(
         current_user=Depends(get_current_superuser)
 ):
     try:
-        article = ArticlesService.create_article(
+        ArticlesService.create_article(
             title=title,
             content=content,
             is_draft=is_draft,
@@ -94,7 +107,7 @@ def create_article(
             detail=str(e),
         )
 
-    return ApiResponse(data=_serialize_article(article, request))
+    return ApiResponse()
 
 
 @router.delete("/", response_model=ApiResponse)
@@ -106,7 +119,7 @@ def deleteArticleBySlug(
     return ApiResponse(data={"deleted_count": deleted_count, })
 
 
-@router.put("/", response_model=ApiResponse[ArticleResponse])
+@router.put("/", response_model=ApiResponse)
 def updateArticleBySlug(
         request: Request,
         slug: str = Form(),
@@ -120,7 +133,7 @@ def updateArticleBySlug(
         current_user=Depends(get_current_superuser)
 ):
     try:
-        article = ArticlesService.updateArticleBySlugs(
+        ArticlesService.updateArticleBySlugs(
             slug=slug,
             title=title,
             content=content,
@@ -136,4 +149,4 @@ def updateArticleBySlug(
             detail=str(e),
         )
 
-    return ApiResponse(data=_serialize_article(article, request))
+    return ApiResponse()

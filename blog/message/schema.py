@@ -6,8 +6,6 @@ from pydantic import BaseModel, Field
 class MessageListResponse(BaseModel):
     nickname: str
     content: str
-    QQ: str | None
-    email: str | None
     created_at: datetime
 
 

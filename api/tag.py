@@ -9,6 +9,7 @@ from blog.tag.schema import (
 )
 from blog.tag.service import TagService
 from core.dependencies import get_current_superuser
+from core.rate_limit import rate_limit
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -17,7 +18,11 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=ApiResponse[TagListResponse])
+@router.get(
+    "",
+    response_model=ApiResponse[TagListResponse],
+    dependencies=[Depends(rate_limit(60))],
+)
 def get_tags(
         page: int = Query(default=1, ge=1),
         page_size: int = Query(default=10, ge=1, le=100),

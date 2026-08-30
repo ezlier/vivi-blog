@@ -11,7 +11,6 @@ class CommentResponse(BaseModel):
     )
 
     nickname: str
-    email: str | None
     content: str
     created_at: datetime
 

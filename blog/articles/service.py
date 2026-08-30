@@ -1,3 +1,4 @@
+import math
 import random
 import string
 
@@ -31,8 +32,26 @@ class ArticlesService:
         }
 
     @staticmethod
-    def getArticlesList():
-        return ArticlesRepository.getArticlesList()
+    def getArticlesList(page: int = 1, page_size: int = 10):
+        offset = (page - 1) * page_size
+        articles = ArticlesRepository.getArticlesList(
+            offset=offset,
+            limit=page_size,
+        )
+
+        total = ArticlesRepository.count_all()
+
+        total_pages = math.ceil(total / page_size) if total > 0 else 0
+
+        return {
+            "articles": {
+                "items": list(articles),
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": total_pages,
+            }
+        }
 
     @staticmethod
     def getArticleBySlug(slug: str):

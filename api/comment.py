@@ -9,6 +9,7 @@ from blog.comment.schema import (
 )
 from blog.comment.service import UserCommentService, AdminCommentService
 from core.dependencies import get_current_superuser
+from core.rate_limit import rate_limit
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -41,7 +42,11 @@ def deleteComments(
 # ===============================
 
 
-@router.get("/{slug}/", response_model=ApiResponse[CommentListResponse])
+@router.get(
+    "/{slug}/",
+    response_model=ApiResponse[CommentListResponse],
+    dependencies=[Depends(rate_limit(60))],
+)
 def getCommentBySlug(
         slug: str,
         page: int = Query(default=1, ge=1, ),
@@ -50,7 +55,11 @@ def getCommentBySlug(
     return ApiResponse(data=UserCommentService.getCommentBySlug(slug=slug, page=page, page_size=page_size))
 
 
-@router.post("/{slug}/", response_model=ApiResponse[CommentResponse], )
+@router.post(
+    "/{slug}/",
+    response_model=ApiResponse[CommentResponse],
+    dependencies=[Depends(rate_limit(10, key_prefix="comment"))],
+)
 def create_comment(
         request: Request,
         slug: str,

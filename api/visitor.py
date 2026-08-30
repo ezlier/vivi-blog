@@ -6,6 +6,7 @@ from blog.visitor.schema import VisitorResponse, VisitorCreateRequest, Blacklist
 from blog.visitor.service import VisitorService
 from core.dependencies import get_current_superuser
 from core.request import get_client_ip
+from core.rate_limit import rate_limit
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -14,7 +15,11 @@ router = APIRouter(
 )
 
 
-@router.post("/track", response_model=ApiResponse[VisitorResponse], )
+@router.post(
+    "/track",
+    response_model=ApiResponse[VisitorResponse],
+    dependencies=[Depends(rate_limit(30, key_prefix="visitor"))],
+)
 def track_visitor(data: VisitorCreateRequest, request: Request, ):
     ip_address = get_client_ip(request)
     user_agent = request.headers.get("User-Agent", "", )

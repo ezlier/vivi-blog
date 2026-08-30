@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Form, Request, Depends
+from fastapi import APIRouter, Form, Request, Depends, Query
 
-from blog.message.schema import MessageListResponse, AdminMessageListResponse, MessageBatchDeleteRequest
+from blog.message.schema import AdminMessageListResponse, MessageBatchDeleteRequest
 from blog.message.service import MessageService
 from core.dependencies import get_current_superuser
+from core.rate_limit import rate_limit
 from core.response import ApiResponse
 
 router = APIRouter(
@@ -11,12 +12,23 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=ApiResponse[list[MessageListResponse]])
-def getMessageList():
-    return ApiResponse(data=MessageService.getMessageList())
+@router.get(
+    "/",
+    response_model=ApiResponse,
+    dependencies=[Depends(rate_limit(60))],
+)
+def getMessageList(
+        page: int = Query(default=1, ge=1, ),
+        page_size: int = Query(default=10, ge=1, le=100, ),
+):
+    return ApiResponse(data=MessageService.getMessageList(page=page, page_size=page_size))
 
 
-@router.post("/", response_model=ApiResponse)
+@router.post(
+    "/",
+    response_model=ApiResponse,
+    dependencies=[Depends(rate_limit(10, key_prefix="message"))],
+)
 def createMessage(
         request: Request,
         content: str = Form(),
