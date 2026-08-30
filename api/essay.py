@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Form, UploadFile, File, Depends
+from fastapi import APIRouter, Query, Form, UploadFile, File, Depends, Request
 
 from blog.essay.schema import EssayListResponse, EssayResponse, EssayBatchDeleteRequest
 from blog.essay.service import UserEssayService, AdminEssayService
@@ -15,10 +15,16 @@ router = APIRouter(
 
 @router.get("/", response_model=ApiResponse[EssayListResponse])
 def getEssayList(
+        request: Request,
         page: int = Query(default=1, ge=1, ),
         page_size: int = Query(default=10, ge=1, le=100, ),
 ):
-    return ApiResponse(data=UserEssayService.getEssayList(page, page_size))
+    return ApiResponse(
+        data=
+        UserEssayService.getEssayList(
+            request=request, page=page, page_size=page_size,
+        )
+    )
 
 
 @router.get("/slug", response_model=ApiResponse[EssayResponse])

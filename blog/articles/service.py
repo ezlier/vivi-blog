@@ -32,12 +32,7 @@ class ArticlesService:
 
     @staticmethod
     def getArticlesList():
-        articles = ArticlesRepository.getArticlesList()
-
-        return [
-            ArticlesService._to_article_data(article)
-            for article in articles
-        ]
+        return ArticlesRepository.getArticlesList()
 
     @staticmethod
     def getArticleBySlug(slug: str):

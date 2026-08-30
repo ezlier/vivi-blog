@@ -3,12 +3,13 @@ import random
 import string
 
 from blog.essay.repository import EssayRepository
+from django.conf import settings
 from core import MediaStorage
 
 
 class UserEssayService:
     @staticmethod
-    def getEssayList(page: int = 1, page_size: int = 10):
+    def getEssayList(request, page: int = 1, page_size: int = 10, ):
         offset = (page - 1) * page_size
         essayListBase = EssayRepository.getEssayList(offset, page_size)
         total = EssayRepository.getEssayCount()
@@ -19,8 +20,17 @@ class UserEssayService:
 
         essayList = []
 
+        media_url = settings.MEDIA_URL.rstrip("/")
+        base_url = str(request.base_url).rstrip("/")
+
         for essay in essayListBase:
             essay.imgs = MediaStorage.getImgs(imgs_Path=essay.imgs)
+
+            imgs = []
+            for img in essay.imgs:
+                imgs.append(f"{base_url}{media_url}/{img.lstrip('/')}")
+
+            essay.imgs = imgs
             essayList.append(essay)
 
         return {

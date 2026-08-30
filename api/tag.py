@@ -69,10 +69,7 @@ def update_tag(
         )
 
 
-@router.delete(
-    "/{tag_id}",
-    response_model=ApiResponse[TagDeleteResponse],
-)
+@router.delete("/{tag_id}", response_model=ApiResponse[TagDeleteResponse], )
 def delete_tag(
         tag_id: int,
         current_user=Depends(get_current_superuser),

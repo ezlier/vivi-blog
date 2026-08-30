@@ -14,16 +14,18 @@ class TagService:
         normalized_names = []
         seen = set()
 
-        for name in names or []:
-            name = name.strip()
-            if not name or name in seen:
-                continue
+        for raw_name in names or []:
+            # Swagger UI may serialize a multipart array as one comma-separated value.
+            for name in raw_name.replace("，", ",").split(","):
+                name = name.strip()
+                if not name or name in seen:
+                    continue
 
-            if len(name) > 50:
-                raise ValueError("标签名称不能超过 50 个字符")
+                if len(name) > 50:
+                    raise ValueError("标签名称不能超过 50 个字符")
 
-            seen.add(name)
-            normalized_names.append(name)
+                seen.add(name)
+                normalized_names.append(name)
 
         return normalized_names
 

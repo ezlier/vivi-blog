@@ -16,7 +16,7 @@ router = APIRouter(
 def _serialize_article(article, request: Request):
     cover_url = None
     if article.cover:
-        cover_url = request.build_absolute_uri(article.cover.url)
+        cover_url = str(request.base_url).rstrip('/') + article.cover.url
 
     return {
         "title": article.title,
@@ -50,8 +50,12 @@ def getArticleBySlug(slug: str, request: Request):
 
 
 @router.get("/", response_model=ApiResponse[list[ArticleListResponse]])
-def getArticlesList():
-    return ApiResponse(data=ArticlesService.getArticlesList())
+def getArticlesList(request: Request):
+    ArticlesBase = ArticlesService.getArticlesList()
+    ArticleList = []
+    for article in ArticlesBase:
+        ArticleList.append(_serialize_article(article, request))
+    return ApiResponse(data=ArticleList)
 
 
 # ============================
@@ -73,7 +77,7 @@ def create_article(
         cover: UploadFile | None = File(None),
         tag_names: list[str] | None = Form(None),
 
-        # current_user=Depends(get_current_superuser)
+        current_user=Depends(get_current_superuser)
 ):
     try:
         article = ArticlesService.create_article(
@@ -98,8 +102,7 @@ def deleteArticleBySlug(
         data: ArticleBatchDeleteRequest,
         current_user=Depends(get_current_superuser)
 ):
-    deleted_count = (ArticlesService.deleteArticleBySlugs(data.slugs))
-
+    deleted_count = ArticlesService.deleteArticleBySlugs(data.slugs)
     return ApiResponse(data={"deleted_count": deleted_count, })
 
 
