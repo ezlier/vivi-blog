@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'blog.setting',
     'blog.tag',
     'blog.visitor',
+    'blog.user',
 ]
 
 MIDDLEWARE = [
