@@ -37,7 +37,7 @@ class IPBlacklist(models.Model):
     IP 黑名单
     """
 
-    ip_address = models.GenericIPAddressField(protocol="both", unpack_ipv4=True, unique=True, verbose_name="IP地址", )
+    ip_address = models.CharField(max_length=45, unique=True, verbose_name="IP地址", )
     reason = models.CharField(max_length=255, blank=True, verbose_name="封禁原因", )
     is_active = models.BooleanField(default=True, verbose_name="是否启用", )
     created_by = models.ForeignKey(

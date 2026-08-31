@@ -105,6 +105,6 @@ def delete_blacklist(
         data: deleteBlackListIdsBatchDeleteRequest,
         current_user=Depends(get_current_superuser),
 ):
-    deleted_count = (VisitorService.deleteArticleBySlugs(data.ids))
+    deleted_count = VisitorService.delete_blacklists(data.ids)
 
     return ApiResponse(data={"deleted_count": deleted_count, })

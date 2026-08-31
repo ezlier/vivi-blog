@@ -1,9 +1,17 @@
+import logging
+
+from redis.exceptions import RedisError
 from django.utils import timezone
+
+from core.blacklist import RedisBlacklist, normalize_blacklist_target
 
 from .repository import (
     IPBlacklistRepository,
     VisitorRepository,
 )
+
+logger = logging.getLogger(__name__)
+blacklist_cache = RedisBlacklist()
 
 
 class VisitorService:
@@ -57,10 +65,29 @@ class VisitorService:
 
     @staticmethod
     def is_blocked(ip_address: str, ) -> bool:
-        return IPBlacklistRepository.is_blocked(
-            ip_address=ip_address,
-            now=timezone.now(),
-        )
+        now = timezone.now()
+
+        try:
+            if (
+                    blacklist_cache.is_empty(now)
+                    and not blacklist_cache.is_loaded()
+            ):
+                blacklist_cache.load(
+                    IPBlacklistRepository.find_active(now)
+                )
+
+            return blacklist_cache.contains(
+                ip_address=ip_address,
+                now=now,
+            )
+        except (RedisError, OSError):
+            logger.exception(
+                "Redis blacklist cache is unavailable; falling back to database"
+            )
+            return IPBlacklistRepository.is_blocked(
+                ip_address=ip_address,
+                now=now,
+            )
 
     @staticmethod
     def add_blacklist(
@@ -70,13 +97,22 @@ class VisitorService:
             expires_at=None,
             created_by,
     ):
-
-        return IPBlacklistRepository.create(
-            ip_address=ip_address,
+        blacklist = IPBlacklistRepository.create(
+            ip_address=normalize_blacklist_target(ip_address),
             reason=reason,
             expires_at=expires_at,
             created_by=created_by,
         )
+        VisitorService.clear_blacklist_cache()
+        return blacklist
+
+    @staticmethod
+    def clear_blacklist_cache():
+        try:
+            blacklist_cache.clear()
+        except (RedisError, OSError):
+            # The database remains the source of truth if Redis is unavailable.
+            logger.exception("Failed to clear Redis blacklist cache")
 
     @staticmethod
     def get_blacklists(page: int, page_size: int):
@@ -111,15 +147,24 @@ class VisitorService:
         if "ip_address" in data and data["ip_address"] is None:
             raise ValueError("ip_address 不能为空")
 
+        if "ip_address" in data:
+            data["ip_address"] = normalize_blacklist_target(data["ip_address"])
+
         if "is_active" in data and data["is_active"] is None:
             raise ValueError("is_active 不能为空")
 
         if "reason" in data and data["reason"] is None:
             data["reason"] = ""
 
-        return IPBlacklistRepository.update(blacklist, **data)
+        blacklist = IPBlacklistRepository.update(blacklist, **data)
+        VisitorService.clear_blacklist_cache()
+        return blacklist
 
     @staticmethod
-    def deleteArticleBySlugs(ids: list[int]):
+    def delete_blacklists(ids: list[int]):
         ids = list(set(ids))
-        return IPBlacklistRepository.deleteArticleBySlugs(ids)
+        deleted_count = IPBlacklistRepository.delete_blacklists(ids)
+        VisitorService.clear_blacklist_cache()
+        return deleted_count
+
+    deleteArticleBySlugs = delete_blacklists

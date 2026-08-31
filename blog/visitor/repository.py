@@ -2,6 +2,8 @@ from datetime import datetime
 
 from django.db.models import Q
 
+from core.blacklist import matching_blacklist_targets
+
 from .models import IPBlacklist, VisitorLog
 
 
@@ -40,7 +42,7 @@ class IPBlacklistRepository:
     @staticmethod
     def is_blocked(ip_address: str, now: datetime, ) -> bool:
         return IPBlacklist.objects.filter(
-            ip_address=ip_address,
+            ip_address__in=matching_blacklist_targets(ip_address),
             is_active=True,
         ).filter(
             Q(expires_at__isnull=True)
@@ -50,6 +52,15 @@ class IPBlacklistRepository:
     @staticmethod
     def find_all():
         return IPBlacklist.objects.all()
+
+    @staticmethod
+    def find_active(now: datetime):
+        return IPBlacklist.objects.filter(
+            is_active=True,
+        ).filter(
+            Q(expires_at__isnull=True)
+            | Q(expires_at__gt=now)
+        )
 
     @staticmethod
     def find_recent(
@@ -97,6 +108,9 @@ class IPBlacklistRepository:
         blacklist.delete()
 
     @staticmethod
-    def deleteArticleBySlugs(ids: list[int]):
+    def delete_blacklists(ids: list[int]):
         deleted_count, _ = (IPBlacklist.objects.filter(id__in=ids).delete())
         return deleted_count
+
+    # Keep the old name temporarily for callers outside this module.
+    deleteArticleBySlugs = delete_blacklists

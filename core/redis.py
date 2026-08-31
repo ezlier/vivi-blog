@@ -1,5 +1,6 @@
 import os
 
+import redis as redis_sync
 import redis.asyncio as redis
 
 
@@ -40,6 +41,17 @@ REDIS_SOCKET_TIMEOUT = float(
 )
 
 redis_client = redis.Redis(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    db=REDIS_DB,
+    password=REDIS_PASSWORD or None,
+    decode_responses=True,
+    socket_connect_timeout=REDIS_SOCKET_CONNECT_TIMEOUT,
+    socket_timeout=REDIS_SOCKET_TIMEOUT,
+    health_check_interval=30,
+)
+
+sync_redis_client = redis_sync.Redis(
     host=REDIS_HOST,
     port=REDIS_PORT,
     db=REDIS_DB,
