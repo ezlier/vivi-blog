@@ -16,10 +16,10 @@ class CommentResponse(BaseModel):
 
 
 class CommentCreateRequest(BaseModel):
-    nickname: str
-    email: str | None = None
-    QQ: int | None = None
-    content: str
+    nickname: str = Field(min_length=1, max_length=20, description="昵称")
+    email: str | None = Field(None, max_length=30, description="邮箱")
+    QQ: str | None = Field(None, max_length=20, description="QQ号码")
+    content: str = Field(min_length=1, max_length=200, description="评论内容，最多200字符")
 
 
 class CommentListResponse(BaseModel):

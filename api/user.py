@@ -16,7 +16,7 @@ def reNameOrPassword(
     pwd: str = Form(None),
     newPwd: str = Form(None),
 
-    current_user=Depends(get_current_superuser)
+    current_user=Depends(get_current_superuser),
 ):
     if newName:
         UserService.rename(current_user, newName)

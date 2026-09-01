@@ -3,7 +3,9 @@ from typing import Annotated
 from django.contrib.auth import get_user_model
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from redis.exceptions import RedisError
 
+from .token_store import token_store
 from .security import decode_token
 
 User = get_user_model()
@@ -13,9 +15,11 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+def get_current_token_payload(
+        token: Annotated[str, Depends(oauth2_scheme)],
+):
     """
-    根据 JWT 获取当前 Django User
+    验证 Access Token，并确认其所属会话仍然有效。
     """
 
     try:
@@ -25,10 +29,13 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
             raise ValueError("不是 Access Token")
 
         user_id = payload.get("sub")
+        session_id = payload.get("sid")
+        jti = payload.get("jti")
 
-        if not user_id:
-            raise ValueError("Token 缺少用户标识")
+        if not user_id or not session_id or not jti:
+            raise ValueError("Token 缺少必要字段")
 
+        user_id = int(user_id)
     except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -37,7 +44,34 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         )
 
     try:
-        user = User.objects.get(id=int(user_id))
+        session_active = token_store.is_session_active(
+            user_id=user_id,
+            session_id=session_id,
+        )
+    except (RedisError, OSError):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="认证服务暂不可用，请稍后重试",
+        )
+
+    if not session_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token 已被撤销",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    payload["sub"] = str(user_id)
+    return payload
+
+
+def get_current_user(payload=Depends(get_current_token_payload)):
+    """
+    根据 JWT 获取当前 Django User
+    """
+
+    try:
+        user = User.objects.get(id=int(payload["sub"]))
     except User.DoesNotExist:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

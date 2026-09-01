@@ -1,5 +1,7 @@
 import math
 
+from fastapi import HTTPException
+
 from blog.message.repository import MessageRepository
 
 
@@ -33,13 +35,19 @@ class MessageService:
             QQ=None,
 
     ):
-        MessageRepository.UserCreateMessage(
-            nickname=nickname,
-            content=content,
-            email=email,
-            QQ=QQ,
-            IP=IP
-        )
+        try:
+            MessageRepository.UserCreateMessage(
+                nickname=nickname,
+                content=content,
+                email=email,
+                QQ=int(QQ),
+                IP=IP
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail="格式不正确",
+            )
 
     @staticmethod
     def deleteMessageByids(ids):

@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
 import jwt
 from jwt import InvalidTokenError
@@ -29,7 +30,11 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(
 )
 
 
-def create_access_token(user_id: int) -> str:
+def create_access_token(
+        user_id: int,
+        session_id: str,
+        jti: str | None = None,
+) -> str:
     """
     创建 Access Token
     """
@@ -42,6 +47,8 @@ def create_access_token(user_id: int) -> str:
     payload = {
         "sub": str(user_id),
         "type": "access",
+        "sid": session_id,
+        "jti": jti or uuid4().hex,
         "iat": now,
         "exp": expire,
     }
@@ -53,7 +60,11 @@ def create_access_token(user_id: int) -> str:
     )
 
 
-def create_refresh_token(user_id: int) -> str:
+def create_refresh_token(
+        user_id: int,
+        session_id: str,
+        jti: str | None = None,
+) -> str:
     """
     创建 Refresh Token
     """
@@ -66,6 +77,8 @@ def create_refresh_token(user_id: int) -> str:
     payload = {
         "sub": str(user_id),
         "type": "refresh",
+        "sid": session_id,
+        "jti": jti or uuid4().hex,
         "iat": now,
         "exp": expire,
     }

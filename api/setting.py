@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Form, UploadFile, File, Depends, HTTPException
+from django.conf import settings
+from fastapi import APIRouter, Form, UploadFile, File, Depends, HTTPException, Request
 
 from blog.setting.schema import SettingResponse
 from blog.setting.service import SettingService, AdminSettingService
@@ -18,9 +19,11 @@ router = APIRouter(
     response_model=ApiResponse[SettingResponse],
     dependencies=[Depends(rate_limit(60))],
 )
-def getSetting():
+def getSetting(request: Request):
+    setting = SettingService.get()
+    setting.name_avatar = f"{str(request.base_url).rstrip('/')}{settings.MEDIA_URL}{setting.name_avatar}"
     return ApiResponse(
-        data=SettingService.get()
+        data=setting
     )
     # return {"message": "Hello World"}
 

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Form, Request, Depends, Query
 
+from blog.comment.schema import CommentCreateRequest
 from blog.message.schema import AdminMessageListResponse, MessageBatchDeleteRequest
 from blog.message.service import MessageService
 from core.dependencies import get_current_superuser
@@ -31,16 +32,13 @@ def getMessageList(
 )
 def createMessage(
         request: Request,
-        content: str = Form(),
-        nickname: str = Form(),
-        email: str = Form(None),
-        QQ: int = Form(None),
+        data: CommentCreateRequest,
 ):
     MessageService.userCreateMessage(
-        content=content,
-        nickname=nickname,
-        email=email,
-        QQ=QQ,
+        content=data.content,
+        nickname=data.nickname,
+        email=data.email,
+        QQ=data.QQ,
         IP=request.state.client_ip
     )
 

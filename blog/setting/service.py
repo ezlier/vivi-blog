@@ -8,8 +8,7 @@ class SettingService:
         setting = SettingRepository.get()
 
         if setting is None:
-            raise Exception
-        print(type(setting))
+            raise Exception("Setting not found")
         return setting
 
 

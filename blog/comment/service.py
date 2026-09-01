@@ -1,5 +1,7 @@
 import math
 
+from fastapi import HTTPException
+
 from blog.articles.repository import ArticlesRepository
 from blog.comment.repository import CommentRepository
 
@@ -39,7 +41,7 @@ class UserCommentService:
                       article_slug: str,
                       nickname: str,
                       email: str | None,
-                      QQ: int | None = None,
+                      QQ=None,
                       content: str,
                       IP: str,
                       ):
@@ -54,14 +56,20 @@ class UserCommentService:
                 "不能评论草稿文章"
             )
 
-        return CommentRepository.create(
-            article=article,
-            nickname=nickname,
-            email=email,
-            QQ=QQ,
-            content=content,
-            IP=IP
-        )
+        try:
+            return CommentRepository.create(
+                article=article,
+                nickname=nickname,
+                email=email,
+                QQ=int(QQ),
+                content=content,
+                IP=IP
+            )
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400,
+                detail="格式不正确",
+            )
 
 
 class AdminCommentService:
