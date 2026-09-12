@@ -11,7 +11,7 @@ from PIL import Image, UnidentifiedImageError
 
 MAX_IMAGE_SIZE = 5 * 1024 * 1024
 MAX_IMAGE_COUNT = 6
-ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".png"}
+ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".png", ".jpeg"}
 ALLOWED_IMAGE_FORMATS = {
     "JPEG": ".jpg",
     "PNG": ".png",
@@ -204,8 +204,10 @@ def _write_upload(target: Path, upload_file) -> None:
         )
 
 
-def getImgs(imgs_Path: str):
-    print(imgs_Path)
+def getImgs(imgs_Path: str | None):
+    if not imgs_Path:
+        return []
+
     image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.tif', '.tiff'}
     result = []
 
@@ -229,7 +231,6 @@ def getImgs(imgs_Path: str):
                     # 使用相对路径构建返回值
                     path = f"{base_path}/{entry}"
                     result.append(path)
-                    print(path)
     except PermissionError:
         pass
 

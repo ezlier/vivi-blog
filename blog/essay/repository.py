@@ -2,6 +2,7 @@ from blog.essay.models import Essay
 
 
 class EssayRepository:
+
     @staticmethod
     def getEssayList(offset: int, limit: int,):
         return Essay.objects.filter(is_draft=False).order_by("-created_at")[offset:offset + limit]
@@ -22,3 +23,11 @@ class EssayRepository:
     def deleteEssayBySlugs(slugs: list[str]):
         deleted_count, _ = (Essay.objects.filter(slug__in=slugs).delete())
         return deleted_count
+
+    @staticmethod
+    def getEssayBySlug(slug):
+        return Essay.objects.filter(slug=slug).first()
+
+    @staticmethod
+    def getEssayBySlugForUpdate(slug):
+        return Essay.objects.select_for_update().filter(slug=slug).first()

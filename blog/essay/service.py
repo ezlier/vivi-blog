@@ -4,10 +4,13 @@ import string
 
 from blog.essay.repository import EssayRepository
 from django.conf import settings
+from django.db import transaction
+from django.utils.timezone import now
 from core import MediaStorage
 
 
 class UserEssayService:
+
     @staticmethod
     def getEssayList(request, page: int = 1, page_size: int = 10, ):
         offset = (page - 1) * page_size
@@ -43,12 +46,15 @@ class UserEssayService:
             }
         }
 
-    @staticmethod
-    def getEssayBySlug(slug: str):
-        pass
-
 
 class AdminEssayService:
+    @staticmethod
+    def getEssayBySlug(slug: str):
+        essay = EssayRepository.getEssayBySlug(slug)
+        if essay is None:
+            raise ValueError("笔记不存在")
+        return essay
+
     @staticmethod
     def createEssay(
             *,
@@ -100,3 +106,54 @@ class AdminEssayService:
             MediaStorage.delete(imgPath)
 
         return deleted_count
+
+    @staticmethod
+    def updateEssayBySlug(
+            *,
+            slug: str,
+            title: str | None = None,
+            content: str | None = None,
+            imgs=None,
+            created_at=None,
+            is_draft: bool | None = None,
+    ):
+        with transaction.atomic():
+            essay = EssayRepository.getEssayBySlugForUpdate(slug)
+            if essay is None:
+                raise ValueError("笔记不存在")
+
+            update_fields = {}
+
+            if title is not None:
+                update_fields["title"] = title
+            if content is not None:
+                update_fields["content"] = content
+            if created_at is not None:
+                update_fields["created_at"] = created_at
+            if is_draft is not None:
+                update_fields["is_draft"] = is_draft
+
+            if imgs:
+                old_imgs_path = essay.imgs
+
+                if len(imgs) > MediaStorage.MAX_IMAGE_COUNT:
+                    raise MediaStorage.ImageValidationError(
+                        f"最多上传 {MediaStorage.MAX_IMAGE_COUNT} 张图片"
+                    )
+
+                # 先校验全部新图片，避免校验失败时删除原图片。
+                for image in imgs:
+                    MediaStorage.validate_image(image)
+
+                if old_imgs_path:
+                    MediaStorage.delete(old_imgs_path)
+
+                update_fields["imgs"] = MediaStorage.saveImgs(imgs, slug=slug)
+
+            if update_fields:
+                update_fields["updated_at"] = now()
+                for field, value in update_fields.items():
+                    setattr(essay, field, value)
+                essay.save(update_fields=list(update_fields))
+
+        return essay
