@@ -123,8 +123,8 @@ def deleteArticleBySlug(
 def updateArticleBySlug(
         request: Request,
         slug: str = Form(),
-        title: str = Form(...),
-        content: str = Form(...),
+        title: str = Form(None),
+        content: str = Form(None),
         is_draft: bool = Form(True),
         cover: UploadFile | None = File(None),
         created_at: datetime | None = Form(None),

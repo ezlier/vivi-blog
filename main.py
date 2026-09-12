@@ -2,7 +2,6 @@ import os
 import uvicorn
 from core.openapi import setup_openapi
 
-
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
     "config.settings"
@@ -19,9 +18,14 @@ from api.router import router
 from middleware.addClientIP import ClientIPMiddleware
 from middleware.blackList import visitor_blacklist_middleware
 
+docs_enabled = (os.getenv("DJANGO_DEBUG", "False", ).lower() == "true")
+
 app = FastAPI(
     title="BlogAPI",
     version="1.0",
+    docs_url="/docs" if docs_enabled else None,
+    redoc_url="/redoc" if docs_enabled else None,
+    openapi_url="/openapi.json" if docs_enabled else None,
 )
 
 app.mount("/media", StaticFiles(directory="media"), name="media")
@@ -38,6 +42,3 @@ def hello():
 setup_openapi(app)
 
 app.include_router(router)
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="localhost", port=8000, reload=True)

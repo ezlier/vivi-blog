@@ -1,22 +1,36 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+
+from core.pagination import PageResponse
 
 
-class MessageListResponse(BaseModel):
+class MessageResponse(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
     nickname: str
     content: str
     created_at: datetime
 
 
-class AdminMessageListResponse(BaseModel):
+class MessageList(BaseModel):
+    messages: PageResponse[MessageResponse]
+
+
+class AdminMessageResponse(BaseModel):
     id: int
     IP: str | None
     nickname: str
     content: str
-    QQ: str | None
+    QQ: str | int | None
     email: str | None
     created_at: datetime
+
+
+class AdminMessageList(BaseModel):
+    messages: PageResponse[AdminMessageResponse]
 
 
 class MessageBatchDeleteRequest(BaseModel):

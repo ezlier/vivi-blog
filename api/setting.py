@@ -14,6 +14,7 @@ router = APIRouter(
     tags=["设定"]
 )
 
+
 @router.get(
     "/",
     response_model=ApiResponse[SettingResponse],
@@ -22,9 +23,7 @@ router = APIRouter(
 def getSetting(request: Request):
     setting = SettingService.get()
     setting.name_avatar = f"{str(request.base_url).rstrip('/')}{settings.MEDIA_URL}{setting.name_avatar}"
-    return ApiResponse(
-        data=setting
-    )
+    return ApiResponse(data=setting)
     # return {"message": "Hello World"}
 
 
@@ -35,15 +34,15 @@ def getSetting(request: Request):
 
 @router.put("/", response_model=ApiResponse)
 def updateSetting(
-    name: str = Form(),
-    web_name: str = Form(),
-    name_avatar: UploadFile | None = File(None),
-    about_md: str = Form(),
-    footer_text1: str = Form(),
-    footer_text2: str = Form(),
-    create_time: datetime | None = Form(None),
+        name: str = Form(),
+        web_name: str = Form(),
+        name_avatar: UploadFile | None = File(None),
+        about_md: str = Form(),
+        footer_text1: str = Form(),
+        footer_text2: str = Form(),
+        create_time: datetime | None = Form(None),
 
-    current_user=Depends(get_current_superuser)
+        current_user=Depends(get_current_superuser)
 ):
     try:
         AdminSettingService.update(

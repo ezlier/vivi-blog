@@ -18,7 +18,7 @@ class MessageService:
         total_pages = math.ceil(total / page_size) if total > 0 else 0
         return {
             "messages": {
-                "items": list(MessageList),
+                "items": MessageList,
                 "total": total,
                 "page": page,
                 "page_size": page_size,
@@ -32,15 +32,26 @@ class MessageService:
             content: str,
             IP: str,
             email=None,
-            QQ=None,
+            QQ="",
 
     ):
+        if QQ:
+            try:
+                QQ = int(QQ)
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="格式不正确",
+                )
+        else:
+            QQ = None
+
         try:
             MessageRepository.UserCreateMessage(
                 nickname=nickname,
                 content=content,
                 email=email,
-                QQ=int(QQ),
+                QQ=QQ,
                 IP=IP
             )
         except Exception as e:

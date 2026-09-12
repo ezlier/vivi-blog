@@ -56,12 +56,21 @@ class UserCommentService:
                 "不能评论草稿文章"
             )
 
+        if QQ:
+            try:
+                QQ = int(QQ)
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="格式不正确",
+                )
+
         try:
             return CommentRepository.create(
                 article=article,
                 nickname=nickname,
                 email=email,
-                QQ=int(QQ),
+                QQ=QQ,
                 content=content,
                 IP=IP
             )

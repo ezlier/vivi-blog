@@ -25,7 +25,7 @@ router = APIRouter(
 )
 def get_tags(
         page: int = Query(default=1, ge=1),
-        page_size: int = Query(default=10, ge=1, le=100),
+        page_size: int = Query(default=30, ge=1, le=100),
 ):
     return ApiResponse(
         data=TagService.get_tags(
