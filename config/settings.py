@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'blog.tag',
     'blog.visitor',
     'blog.user',
+    "blog.system",
 ]
 
 MIDDLEWARE = [
@@ -91,8 +92,13 @@ DATABASES = {
         "PASSWORD": os.getenv("DB_PASSWORD"),
         "HOST": os.getenv("DB_HOST", "127.0.0.1"),
         "PORT": os.getenv("DB_PORT", "3306"),
+        "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
+        "CONN_HEALTH_CHECKS": True,
         'OPTIONS': {
             'charset': 'utf8mb4',  # 支持表情和多语言
+            'connect_timeout': int(os.getenv("DB_CONNECT_TIMEOUT", "5")),
+            'read_timeout': int(os.getenv("DB_READ_TIMEOUT", "30")),
+            'write_timeout': int(os.getenv("DB_WRITE_TIMEOUT", "30")),
         },
     }
 }

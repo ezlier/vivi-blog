@@ -1,6 +1,7 @@
 import os
 import uvicorn
 from core.openapi import setup_openapi
+from core.db import db_connection
 
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
@@ -11,7 +12,7 @@ import django
 
 django.setup()
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from api.router import router
@@ -26,6 +27,7 @@ app = FastAPI(
     docs_url="/docs" if docs_enabled else None,
     redoc_url="/redoc" if docs_enabled else None,
     openapi_url="/openapi.json" if docs_enabled else None,
+    dependencies=[Depends(db_connection)],
 )
 
 app.mount("/media", StaticFiles(directory="media"), name="media")
@@ -42,3 +44,6 @@ def hello():
 setup_openapi(app)
 
 app.include_router(router)
+
+if __name__ == '__main__':
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)

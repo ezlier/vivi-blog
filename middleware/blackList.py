@@ -1,4 +1,5 @@
 from asgiref.sync import sync_to_async
+from django.db import close_old_connections
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
@@ -6,10 +7,21 @@ from blog.visitor.service import VisitorService
 from core.request import get_client_ip
 
 
+def _is_blocked(ip_address: str) -> bool:
+    close_old_connections()
+    try:
+        return VisitorService.is_blocked(ip_address)
+    finally:
+        close_old_connections()
+
+
 async def visitor_blacklist_middleware(request: Request, call_next, ):
     ip_address = get_client_ip(request)
 
-    blocked = await sync_to_async(VisitorService.is_blocked, thread_sensitive=True, )(ip_address)
+    blocked = await sync_to_async(
+        _is_blocked,
+        thread_sensitive=True,
+    )(ip_address)
 
     if blocked:
         return JSONResponse(

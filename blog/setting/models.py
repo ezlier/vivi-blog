@@ -12,10 +12,12 @@ class WebSetting(models.Model):
     create_time = models.DateTimeField()
 
     def save(self, *args, **kwargs):
-        if self.pk:
-            old = WebSetting.objects.get(pk=self.pk)
-            if old.name_avatar and old.name_avatar != self.name_avatar:
-                old.name_avatar.delete(save=False)
+        if self.pk and not self._state.adding:
+            old = WebSetting.objects.filter(pk=self.pk).only("name_avatar").first()
+            if old and old.name_avatar and old.name_avatar != self.name_avatar:
+                from core import MediaStorage
+
+                MediaStorage.delete(old.name_avatar)
 
         super().save(*args, **kwargs)
 
